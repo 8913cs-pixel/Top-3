@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Top3 Mom"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#0b0f14"/>
+<title>Aggressive Momentum — Top 3 Paper Trader</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0b0f14;color:#e7ecf3;padding:16px;max-width:960px;margin:0 auto;line-height:1.45}
+h1{font-size:1.4rem} h1 span{color:#f59e0b}
+.sub{color:#8b9bb4;font-size:.85rem;margin:4px 0 14px}
+.banner{background:#422006;color:#fde68a;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.85rem;border:1px solid #854d0e}
+.card{background:#121820;border:1px solid #243042;border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:.72rem;color:#8b9bb4;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+label{display:block;font-size:.8rem;color:#8b9bb4;margin-bottom:4px}
+input,textarea{width:100%;max-width:100%;background:#1a2332;border:1px solid #2a3548;color:#e7ecf3;padding:10px 12px;border-radius:8px;font-size:16px}
+textarea{min-height:72px;font-family:ui-monospace,monospace;font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+button{background:#f59e0b;color:#1c1000;border:0;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer}
+button:hover{background:#d97706} button:disabled{opacity:.5;cursor:not-allowed}
+button.sec{background:#1a2332;border:1px solid #2a3548;color:#e7ecf3;font-weight:600}
+button.on{background:#22c55e;color:#052e16}
+.status{margin-top:8px;font-size:.85rem;color:#8b9bb4;min-height:1.2em}
+.status.err{color:#ef4444}.status.ok{color:#22c55e}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0}
+.stat{background:#1a2332;border-radius:8px;padding:12px;text-align:center}
+.stat .v{font-size:1.15rem;font-weight:700}.stat .l{font-size:.68rem;color:#8b9bb4;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:8px 6px;border-bottom:1px solid #243042;text-align:left} th{color:#8b9bb4}
+.pos{color:#22c55e}.neg{color:#ef4444}.sym{font-weight:700;color:#f59e0b}
+.info{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:12px;font-size:.83rem;color:#8b9bb4;margin-bottom:12px}
+.info strong{color:#fde68a}
+.progress{height:6px;background:#1a2332;border-radius:3px;margin-top:8px;overflow:hidden;display:none}
+.progress>div{height:100%;background:#f59e0b;width:0%;transition:width .2s}
+.warn{font-size:.75rem;color:#fbbf24;margin-top:8px}
+.live{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#8b9bb4;margin-top:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:#6b7280}
+.dot.on{background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.disclaimer{font-size:.72rem;color:#8b9bb4;margin-top:16px;padding:10px;border-left:3px solid #ef4444;background:#121820;border-radius:6px}
+.log{max-height:260px;overflow-y:auto}
+.hint{font-size:.75rem;color:#8b9bb4;margin-top:6px;line-height:1.4}
+@media(max-width:600px){
+  body{padding:12px;padding-bottom:32px}
+  h1{font-size:1.2rem}
+  .row{flex-direction:column;align-items:stretch}
+  .row button{width:100%;padding:14px}
+}
+</style>
+</head>
+<body>
+<div class="banner" id="banner">Loading…</div>
+<h1>Aggressive <span>Top‑3</span> Momentum</h1>
+<p class="sub">6‑month momentum · top 3 equal weight · $1,000 · cross-device sync · Finnhub</p>
+
+<div class="info">
+  <strong>Strategy:</strong> 6M return &gt; 0 → <strong>top 3 equal weight</strong> · monthly rebalance.<br/>
+  <strong>Sync:</strong> use the same <strong>Sync code</strong> on iPhone and computer, then Push / Pull. Or Export / Import a file.
+</div>
+
+<div class="card">
+  <h2>Finnhub API key</h2>
+  <label>Free key: <a href="https://finnhub.io/register" target="_blank" style="color:#f59e0b">finnhub.io/register</a></label>
+  <input type="password" id="apiKey" placeholder="Paste Finnhub API key" autocomplete="off"/>
+  <div class="row">
+    <button type="button" id="saveKeyBtn">Save Key</button>
+    <span id="keyStatus" class="status" style="margin:0"></span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Cross-device sync</h2>
+  <label>Sync code (same code on phone + computer)</label>
+  <input type="text" id="syncCode" placeholder="Leave blank → click Create code" autocomplete="off" spellcheck="false"/>
+  <div class="row">
+    <button type="button" class="sec" id="createSyncBtn">Create code</button>
+    <button type="button" class="sec" id="pushBtn">Push (save to cloud)</button>
+    <button type="button" class="sec" id="pullBtn">Pull (load from cloud)</button>
+    <button type="button" class="sec" id="exportBtn">Export file</button>
+    <button type="button" class="sec" id="importBtn">Import file</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none"/>
+  </div>
+  <p class="hint">Create a code once → Push on this device → on the other device paste the same code → Pull. Anyone with the code can read/write this paper portfolio — treat it like a password.</p>
+  <div id="syncStatus" class="status"></div>
+</div>
+
+<div class="card">
+  <h2>Controls</h2>
+  <div class="row">
+    <button type="button" id="forceBtn">Force Rebalance Now</button>
+    <button type="button" class="sec" id="rebalBtn">Rebalance If Due (30d)</button>
+    <button type="button" class="sec" id="markBtn">Mark to Market Now</button>
+    <button type="button" class="sec" id="autoBtn">Auto-Update: ON</button>
+    <button type="button" class="sec" id="resetBtn">Reset to $1,000</button>
+  </div>
+  <div class="live">
+    <span class="dot" id="liveDot"></span>
+    <span id="liveText">Auto-update off until key saved</span>
+  </div>
+  <div class="progress" id="progWrap"><div id="progBar"></div></div>
+  <div id="status" class="status"></div>
+  <p class="warn">Auto refresh ≈ 3 Finnhub quotes every 5 min. Full rebalance ≈ 30 calls once.</p>
+</div>
+
+<div class="card">
+  <h2>Portfolio</h2>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="card">
+  <h2>Holdings (Top 3)</h2>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Symbol</th><th>Shares</th><th>Avg cost</th><th>Price</th><th>Value</th><th>P&amp;L</th><th>Weight</th></tr></thead>
+    <tbody id="holdBody"></tbody>
+  </table></div>
+</div>
+
+<div class="card" id="rankCard" style="display:none">
+  <h2>6M ranking (positive only)</h2>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>#</th><th>Symbol</th><th>6M return</th><th>Price</th><th>In portfolio</th></tr></thead>
+    <tbody id="rankBody"></tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <h2>Trade log</h2>
+  <div class="log"><table>
+    <thead><tr><th>Date</th><th>Side</th><th>Symbol</th><th>Shares</th><th>Price</th></tr></thead>
+    <tbody id="logBody"></tbody>
+  </table></div>
+</div>
+
+<div class="disclaimer">
+  Educational paper trading only — not investment advice. Sync uses a public JSON host; your sync code is a secret.
+</div>
+
+<script>
+(function(){
+"use strict";
+document.getElementById("banner").textContent = "JS OK · Top-3 · sync + auto-refresh";
+
+var UNIVERSE = ["AAPL","MSFT","NVDA","AMZN","META","GOOGL","AVGO","TSLA","NFLX","AMD","CRM","ORCL","JPM","V","MA","UNH","LLY","XOM","COST","WMT","JNJ","ABBV","MRK","BAC","HD","PG","KO","PEP","CVX","BRK.B"];
+var TOP_N = 3, START = 1000, REB_DAYS = 30, STORAGE = "agg_top3_paper_v1";
+var AUTO_MS = 5 * 60 * 1000;
+var autoTimer = null, autoEnabled = true, busy = false;
+
+function $(id){ return document.getElementById(id); }
+function money(v){ if(v==null||isNaN(v)) return "—"; return "$"+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pct(v){ if(v==null||isNaN(v)) return "—"; var n=Number(v); return '<span class="'+(n>=0?"pos":"neg")+'">'+(n>=0?"+":"")+n.toFixed(2)+"%</span>"; }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function getKey(){ return ($("apiKey").value.trim() || localStorage.getItem("fh_key_agg") || ""); }
+function setStatus(m,t){ var el=$("status"); el.textContent=m||""; el.className="status"+(t==="err"?" err":t==="ok"?" ok":""); }
+function setSyncStatus(m,t){ var el=$("syncStatus"); el.textContent=m||""; el.className="status"+(t==="err"?" err":t==="ok"?" ok":""); }
+
+function emptyPort(){
+  return { cash: START, start: START, holdings: {}, trades: [], hist: [], last: null, prices: {}, updatedAt: new Date().toISOString() };
+}
+function loadPort(){
+  try{ var r=localStorage.getItem(STORAGE); if(r) return JSON.parse(r); }catch(e){}
+  return emptyPort();
+}
+function savePort(p){
+  p.updatedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE, JSON.stringify(p));
+}
+
+function portValue(p){
+  var eq = p.cash;
+  Object.keys(p.holdings||{}).forEach(function(s){
+    var h=p.holdings[s];
+    var px = p.prices&&p.prices[s]!=null ? p.prices[s] : h.avg;
+    eq += h.shares * px;
+  });
+  return eq;
+}
+
+function fh(path, params){
+  return new Promise(function(resolve, reject){
+    var key = getKey();
+    if(!key){ reject(new Error("Save Finnhub API key first.")); return; }
+    var url = "https://finnhub.io/api/v1"+path+"?token="+encodeURIComponent(key);
+    Object.keys(params||{}).forEach(function(k){
+      url += "&"+encodeURIComponent(k)+"="+encodeURIComponent(params[k]);
+    });
+    fetch(url).then(function(res){
+      if(res.status===403) throw new Error("403 — endpoint may need paid plan");
+      if(res.status===429) throw new Error("429 rate limit — retry later");
+      if(!res.ok) return res.text().then(function(t){ throw new Error("Finnhub "+res.status+": "+String(t).slice(0,120)); });
+      return res.json();
+    }).then(resolve).catch(function(e){ reject(new Error(e.message||String(e))); });
+  });
+}
+
+/* ---- Cloud sync via jsonblob.com (no account) ---- */
+function getSyncId(){ return ($("syncCode").value || localStorage.getItem("agg_sync_id") || "").trim(); }
+function setSyncId(id){
+  $("syncCode").value = id;
+  localStorage.setItem("agg_sync_id", id);
+}
+
+async function cloudCreate(data){
+  var res = await fetch("https://jsonblob.com/api/jsonBlob", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if(!res.ok) throw new Error("Cloud create failed: "+res.status);
+  // Location: https://jsonblob.com/api/jsonBlob/<id>
+  var loc = res.headers.get("Location") || res.headers.get("location") || "";
+  var id = loc.split("/").filter(Boolean).pop();
+  if(!id){
+    // some responses put id in body
+    try{ var j=await res.json(); id=j.id||j.blobId; }catch(e){}
+  }
+  if(!id) throw new Error("No sync id returned from cloud");
+  return id;
+}
+
+async function cloudPush(id, data){
+  var res = await fetch("https://jsonblob.com/api/jsonBlob/"+encodeURIComponent(id), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if(!res.ok) throw new Error("Push failed: "+res.status+" — check sync code");
+  return true;
+}
+
+async function cloudPull(id){
+  var res = await fetch("https://jsonblob.com/api/jsonBlob/"+encodeURIComponent(id), {
+    method: "GET",
+    headers: { "Accept": "application/json" }
+  });
+  if(!res.ok) throw new Error("Pull failed: "+res.status+" — wrong code or expired");
+  return res.json();
+}
+
+async function momAndPrice(sym){
+  var to = Math.floor(Date.now()/1000);
+  var from = to - 200*24*3600;
+  try{
+    var c = await fh("/stock/candle",{symbol:sym, resolution:"D", from:from, to:to});
+    if(c && c.s==="ok" && c.c && c.c.length>=40){
+      var closes=c.c, last=closes[closes.length-1];
+      var idx=Math.max(0, closes.length-126);
+      var past=closes[idx];
+      if(past>0) return {symbol:sym, mom:((last/past)-1)*100, price:last};
+    }
+  }catch(e){}
+  var q = await fh("/quote",{symbol:sym});
+  if(q && q.c) return {symbol:sym, mom: q.dp!=null?q.dp:0, price:q.c, weak:true};
+  return null;
+}
+
+async function rankUniverse(onProg){
+  var results=[], total=UNIVERSE.length;
+  for(var i=0;i<total;i++){
+    if(onProg) onProg(i,total,UNIVERSE[i]);
+    try{
+      var r = await momAndPrice(UNIVERSE[i]);
+      if(r && r.mom>0 && r.price>0) results.push(r);
+    }catch(e){ console.warn(UNIVERSE[i], e.message); }
+    await sleep(1100);
+  }
+  results.sort(function(a,b){ return b.mom-a.mom; });
+  return results;
+}
+
+function needsReb(p){
+  if(!p.last) return true;
+  return (Date.now()-new Date(p.last).getTime())/86400000 >= REB_DAYS-0.5;
+}
+
+function applyTarget(p, targets){
+  var now = new Date().toISOString();
+  Object.keys(p.holdings||{}).forEach(function(s){
+    var h=p.holdings[s];
+    var px = p.prices&&p.prices[s]!=null?p.prices[s]:h.avg;
+    p.cash += h.shares*px;
+    p.trades.push({date:now, side:"SELL", symbol:s, shares:h.shares, price:px});
+  });
+  p.holdings = {};
+  var valid = targets.filter(function(t){ return t.price>0; }).slice(0, TOP_N);
+  if(!valid.length) return p;
+  var per = p.cash / valid.length;
+  valid.forEach(function(t){
+    var sh = per / t.price;
+    p.holdings[t.symbol] = {shares:sh, avg:t.price};
+    if(!p.prices) p.prices={};
+    p.prices[t.symbol] = t.price;
+    p.cash -= sh * t.price;
+    p.trades.push({date:now, side:"BUY", symbol:t.symbol, shares:sh, price:t.price});
+  });
+  p.last = now;
+  var eq = portValue(p);
+  var d = today();
+  if(!p.hist) p.hist=[];
+  var last = p.hist[p.hist.length-1];
+  if(!last || last.date!==d) p.hist.push({date:d, equity:eq}); else last.equity=eq;
+  return p;
+}
+
+async function markPort(p){
+  var syms = Object.keys(p.holdings||{});
+  if(!syms.length) return p;
+  if(!p.prices) p.prices={};
+  for(var i=0;i<syms.length;i++){
+    try{
+      var q = await fh("/quote",{symbol:syms[i]});
+      if(q && q.c) p.prices[syms[i]] = q.c;
+    }catch(e){ console.warn(syms[i], e.message); }
+    if(i < syms.length-1) await sleep(300);
+  }
+  var eq = portValue(p);
+  var d = today();
+  if(!p.hist) p.hist=[];
+  var last = p.hist[p.hist.length-1];
+  if(!last || last.date!==d) p.hist.push({date:d, equity:eq}); else last.equity=eq;
+  return p;
+}
+
+function render(){
+  var p = loadPort();
+  var eq = portValue(p);
+  var pnl = eq - (p.start||START);
+  var ret = p.start ? (pnl/p.start)*100 : 0;
+  $("stats").innerHTML =
+    '<div class="stat"><div class="v">'+money(eq)+'</div><div class="l">Equity</div></div>'+
+    '<div class="stat"><div class="v">'+money(p.cash)+'</div><div class="l">Cash</div></div>'+
+    '<div class="stat"><div class="v"><span class="'+(pnl>=0?"pos":"neg")+'">'+money(pnl)+'</span></div><div class="l">P&L</div></div>'+
+    '<div class="stat"><div class="v">'+pct(ret)+'</div><div class="l">Return</div></div>'+
+    '<div class="stat"><div class="v">'+(p.last?new Date(p.last).toLocaleDateString():"Never")+'</div><div class="l">Last rebalance</div></div>';
+
+  var rows = Object.keys(p.holdings||{});
+  if(!rows.length){
+    $("holdBody").innerHTML = '<tr><td colspan="7" style="color:#8b9bb4;text-align:center">Empty — Force Rebalance Now</td></tr>';
+  } else {
+    $("holdBody").innerHTML = rows.map(function(s){
+      var h=p.holdings[s];
+      var px=p.prices&&p.prices[s]!=null?p.prices[s]:h.avg;
+      var val=h.shares*px;
+      var pl=val-h.shares*h.avg;
+      var w = eq>0 ? (val/eq)*100 : 0;
+      return "<tr><td class='sym'>"+s+"</td><td>"+h.shares.toFixed(4)+"</td><td>"+money(h.avg)+
+        "</td><td>"+money(px)+"</td><td>"+money(val)+"</td><td class='"+(pl>=0?"pos":"neg")+"'>"+money(pl)+
+        "</td><td>"+w.toFixed(1)+"%</td></tr>";
+    }).join("");
+  }
+
+  var trades = (p.trades||[]).slice().reverse().slice(0,50);
+  if(!trades.length){
+    $("logBody").innerHTML = '<tr><td colspan="5" style="color:#8b9bb4;text-align:center">No trades yet</td></tr>';
+  } else {
+    $("logBody").innerHTML = trades.map(function(t){
+      return "<tr><td>"+new Date(t.date).toLocaleString()+"</td><td class='"+(t.side==="BUY"?"pos":"neg")+"'>"+t.side+
+        "</td><td class='sym'>"+t.symbol+"</td><td>"+Number(t.shares).toFixed(4)+"</td><td>"+money(t.price)+"</td></tr>";
+    }).join("");
+  }
+}
+
+function updateLiveUI(){
+  var hasKey = !!getKey();
+  var on = autoEnabled && hasKey;
+  $("liveDot").className = "dot"+(on?" on":"");
+  $("autoBtn").textContent = "Auto-Update: "+(autoEnabled?"ON":"OFF");
+  $("autoBtn").className = autoEnabled ? "on" : "sec";
+  if(!hasKey) $("liveText").textContent = "Save API key to enable auto-update";
+  else if(!autoEnabled) $("liveText").textContent = "Auto-update paused";
+  else $("liveText").textContent = "Auto-update ON · every 5 min · last: "+(window._lastAuto||"not yet");
+}
+
+async function autoTick(){
+  if(busy || !autoEnabled || !getKey()) return;
+  var p = loadPort();
+  if(!Object.keys(p.holdings||{}).length){
+    window._lastAuto = new Date().toLocaleTimeString();
+    updateLiveUI();
+    return;
+  }
+  busy = true;
+  try{
+    p = await markPort(p);
+    savePort(p);
+    render();
+    // optional silent push if sync configured
+    var sid = getSyncId();
+    if(sid){
+      try{ await cloudPush(sid, p); }catch(e){}
+    }
+    window._lastAuto = new Date().toLocaleTimeString();
+    setStatus("Auto mark-to-market at "+window._lastAuto,"ok");
+  }catch(e){ setStatus("Auto-update: "+(e.message||e),"err"); }
+  updateLiveUI();
+  busy = false;
+}
+
+function startAuto(){
+  stopAuto();
+  if(!autoEnabled) return;
+  autoTimer = setInterval(function(){ autoTick(); }, AUTO_MS);
+  setTimeout(function(){ autoTick(); }, 2000);
+  updateLiveUI();
+}
+function stopAuto(){ if(autoTimer){ clearInterval(autoTimer); autoTimer=null; } }
+
+async function runRebalance(force){
+  if(busy){ setStatus("Busy — wait","err"); return; }
+  busy = true;
+  $("forceBtn").disabled = true;
+  $("rebalBtn").disabled = true;
+  $("progWrap").style.display = "block";
+  try{
+    var p = loadPort();
+    if(!force && !needsReb(p)){
+      setStatus("Not due yet (30 days).","ok");
+      p = await markPort(p);
+      savePort(p); render();
+      return;
+    }
+    setStatus("Scanning universe for 6M momentum (Top 3)…");
+    var ranked = await rankUniverse(function(i,total,sym){
+      $("progBar").style.width = Math.round(i/total*100)+"%";
+      setStatus("Fetching "+sym+" ("+(i+1)+"/"+total+")…");
+    });
+    $("progBar").style.width = "100%";
+    if(!ranked.length) throw new Error("No positive-momentum names. Check API key.");
+
+    var targets = ranked.slice(0, TOP_N);
+    var inP = {};
+    targets.forEach(function(t){ inP[t.symbol]=1; });
+    $("rankBody").innerHTML = ranked.slice(0,12).map(function(t,i){
+      return "<tr><td>"+(i+1)+"</td><td class='sym'>"+t.symbol+"</td><td>"+pct(t.mom)+
+        "</td><td>"+money(t.price)+"</td><td>"+(inP[t.symbol]?"✓ TOP 3":"")+"</td></tr>";
+    }).join("");
+    $("rankCard").style.display = "block";
+
+    p = applyTarget(p, targets);
+    savePort(p);
+    render();
+    var sid = getSyncId();
+    if(sid){ try{ await cloudPush(sid, p); setSyncStatus("Rebalanced + pushed to cloud","ok"); }catch(e){} }
+    setStatus("Rebalanced into Top 3: "+targets.map(function(t){return t.symbol;}).join(", "),"ok");
+  }catch(e){
+    console.error(e);
+    setStatus(e.message||"Error","err");
+  }finally{
+    $("forceBtn").disabled = false;
+    $("rebalBtn").disabled = false;
+    $("progWrap").style.display = "none";
+    busy = false;
+  }
+}
+
+function bind(){
+  $("saveKeyBtn").onclick = function(){
+    var k = $("apiKey").value.trim();
+    localStorage.setItem("fh_key_agg", k);
+    $("keyStatus").textContent = k ? "Saved on this device." : "Cleared.";
+    $("keyStatus").className = "status ok";
+    if(k && autoEnabled) startAuto();
+    updateLiveUI();
+  };
+  $("apiKey").value = localStorage.getItem("fh_key_agg") || "";
+  $("syncCode").value = localStorage.getItem("agg_sync_id") || "";
+
+  $("createSyncBtn").onclick = async function(){
+    try{
+      setSyncStatus("Creating cloud slot…");
+      var p = loadPort();
+      var id = await cloudCreate(p);
+      setSyncId(id);
+      setSyncStatus("Code created. Save it, then Push after changes. Code: "+id,"ok");
+    }catch(e){ setSyncStatus(e.message||String(e),"err"); }
+  };
+  $("pushBtn").onclick = async function(){
+    try{
+      var id = getSyncId();
+      if(!id) throw new Error("Create or paste a sync code first");
+      setSyncId(id);
+      var p = loadPort();
+      await cloudPush(id, p);
+      setSyncStatus("Pushed at "+new Date().toLocaleTimeString(),"ok");
+    }catch(e){ setSyncStatus(e.message||String(e),"err"); }
+  };
+  $("pullBtn").onclick = async function(){
+    try{
+      var id = getSyncId();
+      if(!id) throw new Error("Paste your sync code first");
+      setSyncId(id);
+      setSyncStatus("Pulling…");
+      var data = await cloudPull(id);
+      if(!data || typeof data !== "object") throw new Error("Invalid cloud data");
+      // merge: cloud wins for portfolio fields
+      savePort(data);
+      render();
+      setSyncStatus("Pulled portfolio from cloud (updated "+(data.updatedAt||"?")+")","ok");
+    }catch(e){ setSyncStatus(e.message||String(e),"err"); }
+  };
+  $("exportBtn").onclick = function(){
+    var p = loadPort();
+    var blob = new Blob([JSON.stringify(p,null,2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "top3-portfolio-"+today()+".json";
+    a.click();
+    setSyncStatus("Exported file.","ok");
+  };
+  $("importBtn").onclick = function(){ $("importFile").click(); };
+  $("importFile").onchange = function(ev){
+    var f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var data = JSON.parse(reader.result);
+        if(!data || typeof data.holdings === "undefined") throw new Error("Not a portfolio file");
+        savePort(data);
+        render();
+        setSyncStatus("Imported from file.","ok");
+      }catch(e){ setSyncStatus(e.message||"Import failed","err"); }
+    };
+    reader.readAsText(f);
+  };
+
+  $("forceBtn").onclick = function(){ runRebalance(true); };
+  $("rebalBtn").onclick = function(){ runRebalance(false); };
+  $("markBtn").onclick = async function(){
+    if(busy) return;
+    busy = true;
+    $("markBtn").disabled = true;
+    try{
+      setStatus("Marking to market…");
+      var p = await markPort(loadPort());
+      savePort(p); render();
+      window._lastAuto = new Date().toLocaleTimeString();
+      setStatus("Marked to market.","ok");
+      updateLiveUI();
+    }catch(e){ setStatus(e.message,"err"); }
+    $("markBtn").disabled = false;
+    busy = false;
+  };
+  $("autoBtn").onclick = function(){
+    autoEnabled = !autoEnabled;
+    localStorage.setItem("agg_auto", autoEnabled ? "1" : "0");
+    if(autoEnabled && getKey()) startAuto();
+    else stopAuto();
+    updateLiveUI();
+  };
+  $("resetBtn").onclick = function(){
+    if(confirm("Reset paper portfolio to $1,000 and clear trades on THIS device?")){
+      savePort(emptyPort());
+      render();
+      setStatus("Reset complete.","ok");
+    }
+  };
+  autoEnabled = localStorage.getItem("agg_auto") !== "0";
+  render();
+  updateLiveUI();
+  if(autoEnabled && getKey()) startAuto();
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", bind);
+else bind();
+})();
+</script>
+</body>
+</html>
